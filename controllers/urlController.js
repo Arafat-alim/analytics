@@ -1,15 +1,16 @@
 const requestIp = require("request-ip");
 const Url = require("../models/Urls");
 const geoIp = require("geoip-lite");
-const { sendDatatoDiscord } = require("../utils/sendDatatoDiscord");
 const { getUserIp } = require("../utils/getUserIp");
 const { getTotalUserCount } = require("../utils/getTotalUserCount");
+const { sendUserDataToDiscord } = require("../utils/sendUserDataToDiscord");
 
 exports.handlePost = async (req, res) => {
   try {
     // Extract client IP from the request body or headers
     const { ipClient } = req.body;
     const ipDomain = await getUserIp();
+    const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK || null;
 
     if (!ipClient && !ipDomain) {
       return res.status(400).json({
@@ -50,9 +51,18 @@ exports.handlePost = async (req, res) => {
       oldData.visitedHistory.push(newVisit);
       const updatedData = await oldData.save();
 
-      //! send data to webhook
-      await sendDatatoDiscord(newVisit);
       totalVIsitors = await getTotalUserCount();
+      //! send data to webhook
+      await sendUserDataToDiscord({
+        webhookUrl: DISCORD_WEBHOOK_URL,
+        totalVIsitors,
+        visitedData: newVisit,
+        cardColor: "3851519",
+        message: "Visitor visited again, data updated",
+        header:
+          "🔥 Power Level Restored! A Saiyan Has Returned to Arafat’s Battlefield!",
+      });
+
       return res.status(200).json({
         success: true,
         message: "Visited history updated successfully",
@@ -72,6 +82,14 @@ exports.handlePost = async (req, res) => {
     if (!savedData) {
       console.error("Something went wrong while saving new data");
       totalVIsitors = await getTotalUserCount();
+      await sendUserDataToDiscord({
+        webhookUrl: DISCORD_WEBHOOK_URL,
+        totalVIsitors,
+        cardColor: "15158332",
+        message: "System Failure to store data",
+        header:
+          "⚠️ Uh-oh! A Wild Error Appeared! Arafat Tech Support is on the Case!",
+      });
       return res.status(500).json({
         success: false,
         message: "Failed to save data",
@@ -80,6 +98,17 @@ exports.handlePost = async (req, res) => {
     }
 
     totalVIsitors = await getTotalUserCount();
+
+    //! send data to webhook
+    await sendUserDataToDiscord({
+      webhookUrl: DISCORD_WEBHOOK_URL,
+      totalVIsitors,
+      visitedData: newVisit,
+      cardColor: "65280",
+      message: "New User came into your home.",
+      header: "🧠 Curiosity Awakens! A Genius Mind Has Entered Arafat’s Lab!",
+    });
+
     // Return success response
     return res.status(201).json({
       success: true,
