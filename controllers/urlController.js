@@ -24,11 +24,14 @@ exports.handlePost = async (req, res) => {
     //! Update Final Ip
     const ipFinal = ipDomain || ipClient;
 
-    // Fetch geolocation details for the client IP
-    const geo = geoIp.lookup(ipFinal);
-
     // Get server IP using the request-ip library
     const ipServer = requestIp.getClientIp(req);
+
+    // Fetch geolocation details for the client IP
+    const fetchedIp =
+      ipServer === "::1" ? ipFinal : ipServer ? ipServer : ipFinal;
+
+    const geo = geoIp.lookup(fetchedIp);
 
     // Prepare the new visit record
     const newVisit = {
@@ -44,7 +47,7 @@ exports.handlePost = async (req, res) => {
     };
 
     // Check if data already exists for the given client IP
-    const oldData = await Url.findOne({ clientIp: ipServer });
+    const oldData = await Url.findOne({ clientIp: fetchedIp });
 
     if (oldData) {
       // If old data exists, update the visitedHistory array with the new visit record
@@ -72,7 +75,7 @@ exports.handlePost = async (req, res) => {
 
     // If no old data exists, create a new document
     const data = new Url({
-      clientIp: ipFinal,
+      clientIp: fetchedIp,
       userAgent: req.headers["user-agent"],
       visitedHistory: [newVisit],
     });
@@ -113,7 +116,6 @@ exports.handlePost = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "New data added successfully",
-      // data: savedData,
       visitors: totalVIsitors,
     });
   } catch (err) {
