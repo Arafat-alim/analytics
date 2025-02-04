@@ -9,6 +9,7 @@ exports.getAllDataAnalytics = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Data fetched",
+      uniqueUsers,
       data: entries,
     });
   } catch (err) {
