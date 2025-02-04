@@ -6,7 +6,7 @@ const {
 
 const urlRouter = express.Router();
 
-urlRouter.get("/post", handlePost);
+urlRouter.post("/post", handlePost);
 urlRouter.put("/update", handlePreciseLocation);
 
 module.exports = urlRouter;
